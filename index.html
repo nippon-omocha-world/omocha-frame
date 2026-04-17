@@ -9,6 +9,7 @@
       margin: 0;
       overflow: hidden;
       background: black;
+      font-family: sans-serif;
     }
 
     video {
@@ -26,43 +27,66 @@
       pointer-events: none;
     }
 
-    button {
+    .controls {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 15px 30px;
-      font-size: 18px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    button {
+      padding: 14px 20px;
+      font-size: 16px;
       border: none;
-      border-radius: 12px;
-      background: white;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
       color: black;
     }
   </style>
 </head>
-
 <body>
   <video id="camera" autoplay playsinline></video>
 
   <img src="にっぽんおもちゃワールド・フレーム.png" alt="frame">
 
-  <button onclick="takePhoto()">撮影</button>
+  <div class="controls">
+    <button onclick="switchCamera()">カメラ切替</button>
+    <button onclick="takePhoto()">撮影</button>
+  </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
     const video = document.getElementById('camera');
+    let currentStream = null;
+    let useFrontCamera = false;
 
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
-    })
-    .then(stream => {
-      video.srcObject = stream;
-    })
-    .catch(err => {
-      alert("カメラを起動できませんでした: " + err.message);
-    });
+    async function startCamera() {
+      try {
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: useFrontCamera ? "user" : "environment"
+          },
+          audio: false
+        });
+
+        video.srcObject = currentStream;
+      } catch (err) {
+        alert("カメラを起動できませんでした: " + err.message);
+      }
+    }
+
+    function switchCamera() {
+      useFrontCamera = !useFrontCamera;
+      startCamera();
+    }
 
     function takePhoto() {
       const canvas = document.getElementById('canvas');
@@ -84,6 +108,8 @@
         link.click();
       };
     }
+
+    startCamera();
   </script>
 </body>
 </html>
